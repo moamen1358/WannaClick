@@ -33,8 +33,8 @@ toggleEl.addEventListener('change', function () {
 
         // Notify content script of the change
         chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-            if (tabs[0] && tabs[0].url && tabs[0].url.includes('app.apollo.io')) {
-                chrome.tabs.sendMessage(tabs[0].id, { action: 'toggleChanged', enabled: enabled });
+            if (tabs[0]) {
+                chrome.tabs.sendMessage(tabs[0].id, { action: 'toggleChanged', enabled: enabled }).catch(() => {});
             }
         });
     });
@@ -50,8 +50,8 @@ targetInput.addEventListener('change', function () {
 
         // Notify content script of the change
         chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-            if (tabs[0] && tabs[0].url && tabs[0].url.includes('app.apollo.io')) {
-                chrome.tabs.sendMessage(tabs[0].id, { action: 'targetChanged', target: target });
+            if (tabs[0]) {
+                chrome.tabs.sendMessage(tabs[0].id, { action: 'targetChanged', target: target }).catch(() => {});
             }
         });
     });
@@ -77,8 +77,8 @@ function handleDelayChange() {
 
         // Notify content script of the change
         chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-            if (tabs[0] && tabs[0].url && tabs[0].url.includes('app.apollo.io')) {
-                chrome.tabs.sendMessage(tabs[0].id, { action: 'delayChanged', delayMin: delayMin, delayMax: delayMax });
+            if (tabs[0]) {
+                chrome.tabs.sendMessage(tabs[0].id, { action: 'delayChanged', delayMin: delayMin, delayMax: delayMax }).catch(() => {});
             }
         });
     });
@@ -89,12 +89,11 @@ delayMaxInput.addEventListener('change', handleDelayChange);
 
 // Update info text with current target
 function updateInfoText(target) {
-    infoText.textContent = `Automatically clicks the "${target}" tab when you visit Apollo organization pages.`;
+    infoText.textContent = `Automatically clicks the "${target}" element on any website you visit.`;
 }
 
 function updateStatus() {
     chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-        const tab = tabs[0];
         const enabled = toggleEl.checked;
 
         // Update badge
@@ -113,20 +112,8 @@ function updateStatus() {
             return;
         }
 
-        if (tab.url && tab.url.includes('app.apollo.io')) {
-            if (tab.url.includes('/organizations/')) {
-                statusEl.textContent = 'Active on this page';
-                statusCard.className = 'card status-active';
-                statusDot.className = 'status-indicator active';
-            } else {
-                statusEl.textContent = 'Waiting for org page';
-                statusCard.className = 'card status-inactive';
-                statusDot.className = 'status-indicator waiting';
-            }
-        } else {
-            statusEl.textContent = 'Not on Apollo';
-            statusCard.className = 'card status-inactive';
-            statusDot.className = 'status-indicator waiting';
-        }
+        statusEl.textContent = 'Ready';
+        statusCard.className = 'card status-active';
+        statusDot.className = 'status-indicator active';
     });
 }

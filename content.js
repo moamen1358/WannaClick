@@ -1,14 +1,14 @@
 /**
- * Apollo News Tab Auto-Clicker - Chrome Extension
- * Automatically clicks the News tab on Apollo organization pages
+ * WannaNews Auto-Clicker - Chrome Extension
+ * Universal auto-clicker that works on any website
  */
 
 (function () {
     'use strict';
 
-    console.log('[Apollo News Tab] ========================================');
-    console.log('[Apollo News Tab] Extension loaded! URL:', window.location.href);
-    console.log('[Apollo News Tab] ========================================');
+    console.log('[WannaNews] ========================================');
+    console.log('[WannaNews] Extension loaded! URL:', window.location.href);
+    console.log('[WannaNews] ========================================');
 
     const MAX_WAIT_TIME = 20000;
     const CHECK_INTERVAL = 500;
@@ -44,9 +44,9 @@
             targetText = result.targetText || 'News'; // Default to "News"
             delayMin = result.delayMin !== undefined ? result.delayMin : 1;
             delayMax = result.delayMax !== undefined ? result.delayMax : 3;
-            console.log('[Apollo News Tab] Enabled state:', isEnabled);
-            console.log('[Apollo News Tab] Target text:', targetText);
-            console.log('[Apollo News Tab] Delay range:', delayMin, 'to', delayMax, 'seconds');
+            console.log('[WannaNews] Enabled state:', isEnabled);
+            console.log('[WannaNews] Target text:', targetText);
+            console.log('[WannaNews] Delay range:', delayMin, 'to', delayMax, 'seconds');
             if (callback) callback();
         });
     }
@@ -57,7 +57,7 @@
     chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
         if (request.action === 'toggleChanged') {
             isEnabled = request.enabled;
-            console.log('[Apollo News Tab] Toggle changed:', isEnabled);
+            console.log('[WannaNews] Toggle changed:', isEnabled);
 
             if (isEnabled) {
                 updateStatusIndicator(STATUS.IDLE);
@@ -73,7 +73,7 @@
             }
         } else if (request.action === 'targetChanged') {
             targetText = request.target;
-            console.log('[Apollo News Tab] Target changed:', targetText);
+            console.log('[WannaNews] Target changed:', targetText);
 
             // Reset state to allow clicking new target
             newsTabClicked = false;
@@ -86,7 +86,7 @@
         } else if (request.action === 'delayChanged') {
             delayMin = request.delayMin;
             delayMax = request.delayMax;
-            console.log('[Apollo News Tab] Delay changed:', delayMin, 'to', delayMax, 'seconds');
+            console.log('[WannaNews] Delay changed:', delayMin, 'to', delayMax, 'seconds');
         }
     });
 
@@ -97,7 +97,7 @@
         if (statusIndicator) return;
 
         statusIndicator = document.createElement('div');
-        statusIndicator.id = 'apollo-news-tab-indicator';
+        statusIndicator.id = 'wannanews-indicator';
         statusIndicator.style.cssText = `
             position: fixed;
             bottom: 20px;
@@ -121,9 +121,9 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
         `;
         statusIndicator.innerHTML = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.8);"></span> Ready';
-        statusIndicator.title = 'WannaNews - Apollo News Tab Automation';
+        statusIndicator.title = 'WannaNews Auto-Clicker';
         document.body.appendChild(statusIndicator);
-        console.log('[Apollo News Tab] Visual indicator created');
+        console.log('[WannaNews] Visual indicator created');
     }
 
     /**
@@ -149,72 +149,77 @@
     }
 
     /**
-     * Check if current page is an organization page
-     */
-    function isOrganizationPage() {
-        const url = window.location.href;
-        const isOrg = url.includes('/organizations/');
-        console.log('[Apollo News Tab] Checking if org page:', isOrg);
-        return isOrg;
-    }
-
-    /**
-     * Get a unique identifier for the current organization page
-     */
-    function getCurrentOrgId() {
-        const url = window.location.href;
-        const match = url.match(/\/organizations\/([^/?#]+)/);
-        return match ? match[1] : null;
-    }
-
-    /**
      * Find the target tab element
      */
     function findTargetElement() {
-        console.log('[Apollo News Tab] Searching for "' + targetText + '" tab...');
+        console.log('[WannaNews] Searching for "' + targetText + '" element...');
 
-        // Strategy 1: Find ALL spans and look for exact target text
-        const allSpans = document.querySelectorAll('span');
-
-        for (let span of allSpans) {
-            const text = span.textContent.trim();
-
-            if (text === targetText) {
-                console.log('[Apollo News Tab] ✓ Found "' + targetText + '" span');
-
-                // Try to find clickable parent
-                let parent = span.parentElement;
-                for (let i = 0; i < 5 && parent; i++) {
-                    if (parent.tagName === 'BUTTON' || parent.tagName === 'A' ||
-                        parent.getAttribute('role') === 'tab' ||
-                        parent.getAttribute('role') === 'button' ||
-                        parent.tagName === 'LI' ||
-                        parent.onclick || parent.hasAttribute('data-cy')) {
-                        console.log('[Apollo News Tab] ✓ Found clickable parent');
-                        return parent;
-                    }
-                    parent = parent.parentElement;
+        // Helper: Check if element or its children contain exact text
+        function hasExactText(el) {
+            // Check direct text nodes
+            for (let node of el.childNodes) {
+                if (node.nodeType === Node.TEXT_NODE && node.textContent.trim() === targetText) {
+                    return true;
                 }
+            }
+            // Check child elements
+            for (let child of el.children) {
+                if (child.textContent.trim() === targetText) {
+                    return true;
+                }
+            }
+            return false;
+        }
 
-                // No clickable parent found, return the span
-                return span;
+        // Helper: Find clickable parent
+        function findClickableParent(el) {
+            let parent = el.parentElement;
+            for (let i = 0; i < 5 && parent; i++) {
+                if (parent.tagName === 'BUTTON' || parent.tagName === 'A' ||
+                    parent.getAttribute('role') === 'tab' ||
+                    parent.getAttribute('role') === 'button' ||
+                    parent.getAttribute('role') === 'menuitem' ||
+                    parent.tagName === 'LI' ||
+                    parent.onclick || parent.hasAttribute('data-test')) {
+                    return parent;
+                }
+                parent = parent.parentElement;
+            }
+            return null;
+        }
+
+        // Strategy 1: Find text elements (span, div, p, label) with exact match
+        const textElements = document.querySelectorAll('span, div, p, label');
+        for (let el of textElements) {
+            if (el.textContent.trim() === targetText && el.children.length === 0) {
+                console.log('[WannaNews] ✓ Found "' + targetText + '" in text element');
+                const clickable = findClickableParent(el);
+                return clickable || el;
             }
         }
 
-        // Strategy 2: Look for elements with role="tab"
-        const tabs = document.querySelectorAll('[role="tab"]');
-        for (let tab of tabs) {
-            if (tab.textContent.trim().includes(targetText)) {
-                console.log('[Apollo News Tab] ✓ Found "' + targetText + '" via role="tab"');
-                return tab;
+        // Strategy 2: Look for elements with role="tab" or role="menuitem"
+        const roleElements = document.querySelectorAll('[role="tab"], [role="menuitem"]');
+        for (let el of roleElements) {
+            if (hasExactText(el)) {
+                console.log('[WannaNews] ✓ Found "' + targetText + '" via role attribute');
+                return el;
             }
         }
 
-        // Strategy 3: Deep search any clickable with target text
-        const clickables = document.querySelectorAll('button, a, [role="button"], li, div[class*="tab"]');
+        // Strategy 3: Search clickable elements that contain target text
+        const clickables = document.querySelectorAll('button, a, [role="button"], [role="menuitem"], li');
         for (let el of clickables) {
-            if (el.textContent.trim() === targetText) {
-                console.log('[Apollo News Tab] ✓ Found "' + targetText + '" via deep search');
+            if (hasExactText(el)) {
+                console.log('[WannaNews] ✓ Found "' + targetText + '" in clickable element');
+                return el;
+            }
+        }
+
+        // Strategy 4: Fallback - any role element containing text (loose match)
+        for (let el of roleElements) {
+            if (el.textContent.includes(targetText)) {
+                console.log('[WannaNews] ✓ Found "' + targetText + '" via role (includes)');
                 return el;
             }
         }
@@ -235,7 +240,7 @@
      * Click the News tab
      */
     function clickElement(element) {
-        console.log('[Apollo News Tab] Clicking element...');
+        console.log('[WannaNews] Clicking element...');
 
         element.scrollIntoView({ behavior: 'instant', block: 'center' });
 
@@ -281,29 +286,29 @@
         updateStatusIndicator(STATUS.SEARCHING);
 
         if (elapsed % 2000 === 0) {
-            console.log('[Apollo News Tab] Still polling... (' + elapsed + 'ms)');
+            console.log('[WannaNews] Still polling... (' + (elapsed / 1000) + 's)');
         }
 
         const targetElement = findTargetElement();
 
         if (targetElement) {
-            console.log('[Apollo News Tab] ✓✓✓ "' + targetText + '" TAB FOUND after', elapsed, 'ms ✓✓✓');
+            console.log('[WannaNews] ✓✓✓ "' + targetText + '" TAB FOUND after', (elapsed / 1000) + 's', '✓✓✓');
 
             if (intervalId) clearInterval(intervalId);
             intervalId = null;
 
             const randomDelay = getRandomDelay();
-            console.log('[Apollo News Tab] Waiting', randomDelay, 'ms before clicking...');
+            console.log('[WannaNews] Waiting', (randomDelay / 1000) + 's', 'before clicking...');
 
             setTimeout(() => {
                 clickElement(targetElement);
                 newsTabClicked = true;
                 updateStatusIndicator(STATUS.CLICKED);
-                console.log('[Apollo News Tab] ✓ Click executed on "' + targetText + '" after', randomDelay, 'ms delay!');
+                console.log('[WannaNews] ✓ Click executed on "' + targetText + '" after', (randomDelay / 1000) + 's', 'delay!');
             }, randomDelay);
 
         } else if (elapsed >= MAX_WAIT_TIME) {
-            console.warn('[Apollo News Tab] ✗ TIMEOUT searching for "' + targetText + '" after', MAX_WAIT_TIME, 'ms');
+            console.warn('[WannaNews] ✗ TIMEOUT searching for "' + targetText + '" after', (MAX_WAIT_TIME / 1000) + 's');
             updateStatusIndicator(STATUS.TIMEOUT);
             if (intervalId) clearInterval(intervalId);
             intervalId = null;
@@ -315,25 +320,19 @@
      */
     function startAutoClick() {
         if (!isEnabled) {
-            console.log('[Apollo News Tab] Disabled, skipping');
+            console.log('[WannaNews] Disabled, skipping');
             return;
         }
 
         const currentUrl = window.location.href;
-        const currentOrgId = getCurrentOrgId();
 
-        // Check if this is a new organization page
+        // Check if this page was already processed
         if (currentUrl === lastProcessedUrl && newsTabClicked) {
-            console.log('[Apollo News Tab] Same page already processed, skipping');
+            console.log('[WannaNews] Same page already processed, skipping');
             return;
         }
 
-        if (!isOrganizationPage()) {
-            console.log('[Apollo News Tab] Not an organization page, skipping');
-            return;
-        }
-
-        console.log('[Apollo News Tab] ▶ Starting auto-click for:', currentUrl);
+        console.log('[WannaNews] ▶ Starting auto-click for:', currentUrl);
 
         createStatusIndicator();
         updateStatusIndicator(STATUS.SEARCHING);
@@ -358,7 +357,7 @@
     function checkForUrlChange() {
         const currentUrl = window.location.href;
         if (currentUrl !== lastCheckedUrl) {
-            console.log('[Apollo News Tab] URL changed:', lastCheckedUrl, '->', currentUrl);
+            console.log('[WannaNews] URL changed:', lastCheckedUrl, '->', currentUrl);
             lastCheckedUrl = currentUrl;
 
             // Reset state for new page
@@ -383,7 +382,7 @@
 
     // Listen for hash changes (SPA navigation)
     window.addEventListener('hashchange', function () {
-        console.log('[Apollo News Tab] Hash changed!');
+        console.log('[WannaNews] Hash changed!');
         newsTabClicked = false;
         lastProcessedUrl = '';
         setTimeout(startAutoClick, 500);
@@ -391,7 +390,7 @@
 
     // Listen for popstate (back/forward navigation)
     window.addEventListener('popstate', function () {
-        console.log('[Apollo News Tab] Popstate event!');
+        console.log('[WannaNews] Popstate event!');
         newsTabClicked = false;
         lastProcessedUrl = '';
         setTimeout(startAutoClick, 500);
@@ -400,7 +399,7 @@
     // Listen for visibility changes (when user switches tabs and comes back)
     document.addEventListener('visibilitychange', function () {
         if (document.visibilityState === 'visible') {
-            console.log('[Apollo News Tab] Tab became visible!');
+            console.log('[WannaNews] Tab became visible!');
             // Reset and try again when tab becomes visible
             newsTabClicked = false;
             lastProcessedUrl = '';
@@ -414,5 +413,5 @@
     // Initial run
     setTimeout(startAutoClick, 1000);
 
-    console.log('[Apollo News Tab] ✓ Extension setup complete!');
+    console.log('[WannaNews] ✓ Extension setup complete!');
 })();

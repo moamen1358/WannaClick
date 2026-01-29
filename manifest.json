@@ -1,20 +1,20 @@
 {
     "manifest_version": 3,
     "name": "WannaNews",
-    "version": "1.1",
-    "description": "Automatically clicks the News tab on Apollo organization pages",
+    "version": "2.0",
+    "description": "Universal auto-clicker - automatically clicks any element you specify on any website",
     "permissions": [
         "activeTab",
         "scripting",
         "storage"
     ],
     "host_permissions": [
-        "https://app.apollo.io/*"
+        "<all_urls>"
     ],
     "content_scripts": [
         {
             "matches": [
-                "https://app.apollo.io/*"
+                "<all_urls>"
             ],
             "js": [
                 "content.js"
