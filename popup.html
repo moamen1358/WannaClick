@@ -284,6 +284,46 @@
       border-color: rgba(255, 255, 255, 0.2);
     }
 
+    /* Delay Inputs */
+    .delay-inputs {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .delay-inputs input {
+      flex: 1;
+      padding: 10px 12px;
+      font-size: 14px;
+      font-family: inherit;
+      color: #ffffff;
+      background: #2d2d44;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      outline: none;
+      transition: all 0.2s ease;
+      text-align: center;
+    }
+
+    .delay-inputs input::placeholder {
+      color: rgba(255, 255, 255, 0.4);
+    }
+
+    .delay-inputs input:focus {
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+    }
+
+    .delay-inputs input:hover {
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .delay-separator {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.5);
+      font-weight: 500;
+    }
+
     /* Info Section */
     .info-section {
       background: rgba(102, 126, 234, 0.1);
@@ -373,6 +413,17 @@
       <div class="input-section">
         <label class="input-label" for="target-input">Target Tab</label>
         <input type="text" id="target-input" placeholder="News" />
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="input-section">
+        <label class="input-label">Click Delay (seconds)</label>
+        <div class="delay-inputs">
+          <input type="number" id="delay-min" min="0" step="0.5" placeholder="1" />
+          <span class="delay-separator">to</span>
+          <input type="number" id="delay-max" min="0" step="0.5" placeholder="3" />
+        </div>
       </div>
     </div>
 

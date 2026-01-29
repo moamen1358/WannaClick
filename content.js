@@ -21,6 +21,8 @@
     let statusIndicator = null;
     let isEnabled = true;
     let targetText = 'News';
+    let delayMin = 1; // seconds
+    let delayMax = 3; // seconds
 
     /**
      * Visual status indicator states
@@ -34,14 +36,17 @@
     };
 
     /**
-     * Load enabled state and target from storage
+     * Load enabled state, target, and delay from storage
      */
     function loadSettings(callback) {
-        chrome.storage.local.get(['enabled', 'targetText'], function (result) {
+        chrome.storage.local.get(['enabled', 'targetText', 'delayMin', 'delayMax'], function (result) {
             isEnabled = result.enabled !== false; // Default to true
             targetText = result.targetText || 'News'; // Default to "News"
+            delayMin = result.delayMin !== undefined ? result.delayMin : 1;
+            delayMax = result.delayMax !== undefined ? result.delayMax : 3;
             console.log('[Apollo News Tab] Enabled state:', isEnabled);
             console.log('[Apollo News Tab] Target text:', targetText);
+            console.log('[Apollo News Tab] Delay range:', delayMin, 'to', delayMax, 'seconds');
             if (callback) callback();
         });
     }
@@ -78,6 +83,10 @@
                 updateStatusIndicator(STATUS.IDLE);
                 setTimeout(startAutoClick, 500);
             }
+        } else if (request.action === 'delayChanged') {
+            delayMin = request.delayMin;
+            delayMax = request.delayMax;
+            console.log('[Apollo News Tab] Delay changed:', delayMin, 'to', delayMax, 'seconds');
         }
     });
 
@@ -214,6 +223,15 @@
     }
 
     /**
+     * Get a random delay in milliseconds between delayMin and delayMax
+     */
+    function getRandomDelay() {
+        const min = delayMin * 1000; // convert to ms
+        const max = delayMax * 1000;
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    /**
      * Click the News tab
      */
     function clickElement(element) {
@@ -274,12 +292,15 @@
             if (intervalId) clearInterval(intervalId);
             intervalId = null;
 
+            const randomDelay = getRandomDelay();
+            console.log('[Apollo News Tab] Waiting', randomDelay, 'ms before clicking...');
+
             setTimeout(() => {
                 clickElement(targetElement);
                 newsTabClicked = true;
                 updateStatusIndicator(STATUS.CLICKED);
-                console.log('[Apollo News Tab] ✓ Click executed on "' + targetText + '"!');
-            }, 500);
+                console.log('[Apollo News Tab] ✓ Click executed on "' + targetText + '" after', randomDelay, 'ms delay!');
+            }, randomDelay);
 
         } else if (elapsed >= MAX_WAIT_TIME) {
             console.warn('[Apollo News Tab] ✗ TIMEOUT searching for "' + targetText + '" after', MAX_WAIT_TIME, 'ms');
