@@ -245,6 +245,45 @@
       color: #6b7280;
     }
 
+    /* Input Section */
+    .input-section {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .input-label {
+      font-size: 14px;
+      font-weight: 600;
+      color: #ffffff;
+    }
+
+    #target-input {
+      width: 100%;
+      padding: 10px 12px;
+      font-size: 14px;
+      font-family: inherit;
+      color: #ffffff;
+      background: #2d2d44;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    #target-input::placeholder {
+      color: rgba(255, 255, 255, 0.4);
+    }
+
+    #target-input:focus {
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+    }
+
+    #target-input:hover {
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
     /* Info Section */
     .info-section {
       background: rgba(102, 126, 234, 0.1);
@@ -321,12 +360,19 @@
       <div class="toggle-section">
         <div class="toggle-info">
           <span class="toggle-label">Auto-Click</span>
-          <span class="toggle-desc">Click News tab automatically</span>
+          <span class="toggle-desc">Click target tab automatically</span>
         </div>
         <label class="switch">
           <input type="checkbox" id="toggle" checked>
           <span class="slider"></span>
         </label>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="input-section">
+        <label class="input-label" for="target-input">Target Tab</label>
+        <input type="text" id="target-input" placeholder="News" />
       </div>
     </div>
 
@@ -343,7 +389,7 @@
     <div class="info-section">
       <div class="info-row">
         <span class="info-icon">i</span>
-        <span class="info-text">Automatically clicks the "News" tab when you visit Apollo organization pages.</span>
+        <span class="info-text" id="info-text">Automatically clicks the "News" tab when you visit Apollo organization pages.</span>
       </div>
     </div>
   </div>

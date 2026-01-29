@@ -3,12 +3,18 @@ const statusEl = document.getElementById('status');
 const statusDot = document.getElementById('status-dot');
 const statusCard = document.getElementById('status-card');
 const badge = document.getElementById('badge');
+const targetInput = document.getElementById('target-input');
+const infoText = document.getElementById('info-text');
 
 // Load saved state
-chrome.storage.local.get(['enabled'], function (result) {
+chrome.storage.local.get(['enabled', 'targetText'], function (result) {
     // Default to enabled if not set
     const enabled = result.enabled !== false;
+    const target = result.targetText || 'News';
+
     toggleEl.checked = enabled;
+    targetInput.value = target;
+    updateInfoText(target);
     updateStatus();
 });
 
@@ -27,6 +33,28 @@ toggleEl.addEventListener('change', function () {
         });
     });
 });
+
+// Handle target input change
+targetInput.addEventListener('change', function () {
+    const target = targetInput.value.trim() || 'News';
+    targetInput.value = target; // Normalize empty to default
+    chrome.storage.local.set({ targetText: target }, function () {
+        console.log('Target text changed:', target);
+        updateInfoText(target);
+
+        // Notify content script of the change
+        chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+            if (tabs[0] && tabs[0].url && tabs[0].url.includes('app.apollo.io')) {
+                chrome.tabs.sendMessage(tabs[0].id, { action: 'targetChanged', target: target });
+            }
+        });
+    });
+});
+
+// Update info text with current target
+function updateInfoText(target) {
+    infoText.textContent = `Automatically clicks the "${target}" tab when you visit Apollo organization pages.`;
+}
 
 function updateStatus() {
     chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {

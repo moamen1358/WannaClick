@@ -20,6 +20,7 @@
     let lastProcessedUrl = '';
     let statusIndicator = null;
     let isEnabled = true;
+    let targetText = 'News';
 
     /**
      * Visual status indicator states
@@ -33,18 +34,20 @@
     };
 
     /**
-     * Load enabled state from storage
+     * Load enabled state and target from storage
      */
-    function loadEnabledState(callback) {
-        chrome.storage.local.get(['enabled'], function (result) {
+    function loadSettings(callback) {
+        chrome.storage.local.get(['enabled', 'targetText'], function (result) {
             isEnabled = result.enabled !== false; // Default to true
+            targetText = result.targetText || 'News'; // Default to "News"
             console.log('[Apollo News Tab] Enabled state:', isEnabled);
+            console.log('[Apollo News Tab] Target text:', targetText);
             if (callback) callback();
         });
     }
 
     /**
-     * Listen for toggle changes from popup
+     * Listen for toggle and target changes from popup
      */
     chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
         if (request.action === 'toggleChanged') {
@@ -62,6 +65,18 @@
                     clearInterval(intervalId);
                     intervalId = null;
                 }
+            }
+        } else if (request.action === 'targetChanged') {
+            targetText = request.target;
+            console.log('[Apollo News Tab] Target changed:', targetText);
+
+            // Reset state to allow clicking new target
+            newsTabClicked = false;
+            lastProcessedUrl = '';
+
+            if (isEnabled) {
+                updateStatusIndicator(STATUS.IDLE);
+                setTimeout(startAutoClick, 500);
             }
         }
     });
@@ -144,19 +159,19 @@
     }
 
     /**
-     * Find the News tab element
+     * Find the target tab element
      */
-    function findNewsTab() {
-        console.log('[Apollo News Tab] Searching for News tab...');
+    function findTargetElement() {
+        console.log('[Apollo News Tab] Searching for "' + targetText + '" tab...');
 
-        // Strategy 1: Find ALL spans and look for exact "News" text
+        // Strategy 1: Find ALL spans and look for exact target text
         const allSpans = document.querySelectorAll('span');
 
         for (let span of allSpans) {
             const text = span.textContent.trim();
 
-            if (text === 'News') {
-                console.log('[Apollo News Tab] ✓ Found "News" span');
+            if (text === targetText) {
+                console.log('[Apollo News Tab] ✓ Found "' + targetText + '" span');
 
                 // Try to find clickable parent
                 let parent = span.parentElement;
@@ -180,17 +195,17 @@
         // Strategy 2: Look for elements with role="tab"
         const tabs = document.querySelectorAll('[role="tab"]');
         for (let tab of tabs) {
-            if (tab.textContent.trim().includes('News')) {
-                console.log('[Apollo News Tab] ✓ Found News via role="tab"');
+            if (tab.textContent.trim().includes(targetText)) {
+                console.log('[Apollo News Tab] ✓ Found "' + targetText + '" via role="tab"');
                 return tab;
             }
         }
 
-        // Strategy 3: Deep search any clickable with "News"
+        // Strategy 3: Deep search any clickable with target text
         const clickables = document.querySelectorAll('button, a, [role="button"], li, div[class*="tab"]');
         for (let el of clickables) {
-            if (el.textContent.trim() === 'News') {
-                console.log('[Apollo News Tab] ✓ Found News via deep search');
+            if (el.textContent.trim() === targetText) {
+                console.log('[Apollo News Tab] ✓ Found "' + targetText + '" via deep search');
                 return el;
             }
         }
@@ -251,23 +266,23 @@
             console.log('[Apollo News Tab] Still polling... (' + elapsed + 'ms)');
         }
 
-        const newsTab = findNewsTab();
+        const targetElement = findTargetElement();
 
-        if (newsTab) {
-            console.log('[Apollo News Tab] ✓✓✓ NEWS TAB FOUND after', elapsed, 'ms ✓✓✓');
+        if (targetElement) {
+            console.log('[Apollo News Tab] ✓✓✓ "' + targetText + '" TAB FOUND after', elapsed, 'ms ✓✓✓');
 
             if (intervalId) clearInterval(intervalId);
             intervalId = null;
 
             setTimeout(() => {
-                clickElement(newsTab);
+                clickElement(targetElement);
                 newsTabClicked = true;
                 updateStatusIndicator(STATUS.CLICKED);
-                console.log('[Apollo News Tab] ✓ Click executed!');
+                console.log('[Apollo News Tab] ✓ Click executed on "' + targetText + '"!');
             }, 500);
 
         } else if (elapsed >= MAX_WAIT_TIME) {
-            console.warn('[Apollo News Tab] ✗ TIMEOUT after', MAX_WAIT_TIME, 'ms');
+            console.warn('[Apollo News Tab] ✗ TIMEOUT searching for "' + targetText + '" after', MAX_WAIT_TIME, 'ms');
             updateStatusIndicator(STATUS.TIMEOUT);
             if (intervalId) clearInterval(intervalId);
             intervalId = null;
@@ -335,8 +350,8 @@
 
     // ===== INITIALIZATION =====
 
-    // Load initial state
-    loadEnabledState(function () {
+    // Load initial settings
+    loadSettings(function () {
         // Create indicator early
         createStatusIndicator();
 
