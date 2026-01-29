@@ -1,6 +1,6 @@
 {
     "manifest_version": 3,
-    "name": "WannaNews",
+    "name": "WannaClick",
     "version": "2.0",
     "description": "Universal auto-clicker - automatically clicks any element you specify on any website",
     "permissions": [
