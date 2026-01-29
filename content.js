@@ -25,11 +25,11 @@
      * Visual status indicator states
      */
     const STATUS = {
-        IDLE: { color: '#888', label: 'Idle' },
-        SEARCHING: { color: '#f0ad4e', label: 'Searching...' },
-        CLICKED: { color: '#5cb85c', label: 'Done!' },
-        TIMEOUT: { color: '#d9534f', label: 'Timeout' },
-        DISABLED: { color: '#666', label: 'Disabled' }
+        IDLE: { bg: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', dot: 'rgba(255,255,255,0.8)', label: 'Ready' },
+        SEARCHING: { bg: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', dot: '#fff', label: 'Searching...' },
+        CLICKED: { bg: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', dot: '#fff', label: 'Done!' },
+        TIMEOUT: { bg: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)', dot: '#fff', label: 'Timeout' },
+        DISABLED: { bg: 'linear-gradient(135deg, #4b5563 0%, #374151 100%)', dot: 'rgba(255,255,255,0.5)', label: 'Disabled' }
     };
 
     /**
@@ -76,23 +76,28 @@
         statusIndicator.id = 'apollo-news-tab-indicator';
         statusIndicator.style.cssText = `
             position: fixed;
-            bottom: 10px;
-            right: 10px;
+            bottom: 20px;
+            right: 20px;
             z-index: 999999;
-            padding: 6px 12px;
-            border-radius: 16px;
+            padding: 10px 16px;
+            border-radius: 10px;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            font-size: 11px;
+            font-size: 12px;
             font-weight: 600;
             color: white;
-            background-color: ${STATUS.IDLE.color};
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4), 0 2px 6px rgba(0,0,0,0.2);
             cursor: default;
             user-select: none;
-            transition: background-color 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         `;
-        statusIndicator.textContent = '🔵 News Tab';
-        statusIndicator.title = 'Apollo News Tab Auto-Clicker';
+        statusIndicator.innerHTML = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.8);"></span> Ready';
+        statusIndicator.title = 'WannaNews - Apollo News Tab Automation';
         document.body.appendChild(statusIndicator);
         console.log('[Apollo News Tab] Visual indicator created');
     }
@@ -102,8 +107,21 @@
      */
     function updateStatusIndicator(status) {
         if (!statusIndicator) return;
-        statusIndicator.style.backgroundColor = status.color;
-        statusIndicator.textContent = `📰 ${status.label}`;
+        statusIndicator.style.background = status.bg;
+        statusIndicator.innerHTML = `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${status.dot};${status === STATUS.SEARCHING ? 'animation:wnPulse 1s ease-in-out infinite;' : ''}"></span> ${status.label}`;
+
+        // Inject animation keyframes if not already present
+        if (!document.getElementById('wn-animations')) {
+            const style = document.createElement('style');
+            style.id = 'wn-animations';
+            style.textContent = `
+                @keyframes wnPulse {
+                    0%, 100% { opacity: 1; transform: scale(1); }
+                    50% { opacity: 0.5; transform: scale(0.8); }
+                }
+            `;
+            document.head.appendChild(style);
+        }
     }
 
     /**

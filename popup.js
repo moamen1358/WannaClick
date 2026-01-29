@@ -1,5 +1,8 @@
 const toggleEl = document.getElementById('toggle');
 const statusEl = document.getElementById('status');
+const statusDot = document.getElementById('status-dot');
+const statusCard = document.getElementById('status-card');
+const badge = document.getElementById('badge');
 
 // Load saved state
 chrome.storage.local.get(['enabled'], function (result) {
@@ -30,23 +33,36 @@ function updateStatus() {
         const tab = tabs[0];
         const enabled = toggleEl.checked;
 
+        // Update badge
+        if (enabled) {
+            badge.textContent = 'Active';
+            badge.classList.remove('off');
+        } else {
+            badge.textContent = 'Off';
+            badge.classList.add('off');
+        }
+
         if (!enabled) {
-            statusEl.textContent = '⏸ Disabled';
-            statusEl.className = 'status-value status-disabled';
+            statusEl.textContent = 'Extension disabled';
+            statusCard.className = 'card status-disabled';
+            statusDot.className = 'status-indicator disabled';
             return;
         }
 
         if (tab.url && tab.url.includes('app.apollo.io')) {
             if (tab.url.includes('/organizations/')) {
-                statusEl.textContent = '✓ Active on this page';
-                statusEl.className = 'status-value status-active';
+                statusEl.textContent = 'Active on this page';
+                statusCard.className = 'card status-active';
+                statusDot.className = 'status-indicator active';
             } else {
                 statusEl.textContent = 'Waiting for org page';
-                statusEl.className = 'status-value status-inactive';
+                statusCard.className = 'card status-inactive';
+                statusDot.className = 'status-indicator waiting';
             }
         } else {
             statusEl.textContent = 'Not on Apollo';
-            statusEl.className = 'status-value status-inactive';
+            statusCard.className = 'card status-inactive';
+            statusDot.className = 'status-indicator waiting';
         }
     });
 }
