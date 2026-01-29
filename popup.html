@@ -40,37 +40,37 @@
     .header-content {
       position: relative;
       z-index: 1;
-    }
-
-    .logo-row {
       display: flex;
       align-items: center;
-      gap: 12px;
-      margin-bottom: 8px;
+      gap: 14px;
     }
 
-    .logo-icon {
-      width: 36px;
-      height: 36px;
-      background: rgba(255, 255, 255, 0.2);
-      border-radius: 10px;
+    .logo-img {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.95);
+      padding: 4px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .header-text {
       display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 20px;
-      backdrop-filter: blur(10px);
+      flex-direction: column;
+      gap: 2px;
     }
 
     .logo-text {
-      font-size: 20px;
+      font-size: 22px;
       font-weight: 700;
       letter-spacing: -0.5px;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
 
     .tagline {
       font-size: 12px;
-      color: rgba(255, 255, 255, 0.8);
-      margin-left: 48px;
+      color: rgba(255, 255, 255, 0.85);
+      font-weight: 500;
     }
 
     /* Main Content */
@@ -258,6 +258,13 @@
       color: #ffffff;
     }
 
+    .input-label-desc {
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.5);
+      font-weight: 400;
+      margin-left: 6px;
+    }
+
     #target-input {
       width: 100%;
       padding: 10px 12px;
@@ -285,15 +292,31 @@
     }
 
     /* Delay Inputs */
-    .delay-inputs {
+    .delay-container {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
     }
 
-    .delay-inputs input {
+    .delay-input-group {
       flex: 1;
-      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .delay-input-label {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: rgba(255, 255, 255, 0.5);
+      text-align: center;
+    }
+
+    .delay-input-group input {
+      width: 100%;
+      padding: 10px 8px;
       font-size: 14px;
       font-family: inherit;
       color: #ffffff;
@@ -305,23 +328,24 @@
       text-align: center;
     }
 
-    .delay-inputs input::placeholder {
+    .delay-input-group input::placeholder {
       color: rgba(255, 255, 255, 0.4);
     }
 
-    .delay-inputs input:focus {
+    .delay-input-group input:focus {
       border-color: #667eea;
       box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
     }
 
-    .delay-inputs input:hover {
+    .delay-input-group input:hover {
       border-color: rgba(255, 255, 255, 0.2);
     }
 
     .delay-separator {
-      font-size: 12px;
-      color: rgba(255, 255, 255, 0.5);
-      font-weight: 500;
+      font-size: 18px;
+      color: rgba(255, 255, 255, 0.3);
+      font-weight: 300;
+      margin-top: 18px;
     }
 
     /* Info Section */
@@ -340,8 +364,17 @@
     }
 
     .info-icon {
-      font-size: 14px;
-      line-height: 1.4;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: rgba(102, 126, 234, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: #a5b4fc;
+      flex-shrink: 0;
     }
 
     .info-text {
@@ -387,11 +420,11 @@
 <body>
   <div class="header">
     <div class="header-content">
-      <div class="logo-row">
-        <div class="logo-icon">W</div>
+      <img src="icons/logo.png" alt="WannaNews" class="logo-img" />
+      <div class="header-text">
         <span class="logo-text">WannaNews</span>
+        <span class="tagline">Apollo News Tab Automation</span>
       </div>
-      <div class="tagline">Apollo News Tab Automation</div>
     </div>
   </div>
 
@@ -418,11 +451,17 @@
 
     <div class="card">
       <div class="input-section">
-        <label class="input-label">Click Delay (seconds)</label>
-        <div class="delay-inputs">
-          <input type="number" id="delay-min" min="0" step="0.5" placeholder="1" />
-          <span class="delay-separator">to</span>
-          <input type="number" id="delay-max" min="0" step="0.5" placeholder="3" />
+        <label class="input-label">Click Delay<span class="input-label-desc">random range in seconds</span></label>
+        <div class="delay-container">
+          <div class="delay-input-group">
+            <span class="delay-input-label">Min</span>
+            <input type="number" id="delay-min" min="0" step="0.5" placeholder="1" />
+          </div>
+          <span class="delay-separator">-</span>
+          <div class="delay-input-group">
+            <span class="delay-input-label">Max</span>
+            <input type="number" id="delay-max" min="0" step="0.5" placeholder="3" />
+          </div>
         </div>
       </div>
     </div>
@@ -446,7 +485,7 @@
   </div>
 
   <div class="footer">
-    <span class="version">v1.1</span>
+    <span class="version">v1.2</span>
     <span class="badge" id="badge">Active</span>
   </div>
 
