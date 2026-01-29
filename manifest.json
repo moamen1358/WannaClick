@@ -1,0 +1,38 @@
+{
+    "manifest_version": 3,
+    "name": "WannaNews",
+    "version": "1.1",
+    "description": "Automatically clicks the News tab on Apollo organization pages",
+    "permissions": [
+        "activeTab",
+        "scripting",
+        "storage"
+    ],
+    "host_permissions": [
+        "https://app.apollo.io/*"
+    ],
+    "content_scripts": [
+        {
+            "matches": [
+                "https://app.apollo.io/*"
+            ],
+            "js": [
+                "content.js"
+            ],
+            "run_at": "document_idle"
+        }
+    ],
+    "action": {
+        "default_popup": "popup.html",
+        "default_icon": {
+            "16": "icons/logo.png",
+            "48": "icons/logo.png",
+            "128": "icons/logo.png"
+        }
+    },
+    "icons": {
+        "16": "icons/logo.png",
+        "48": "icons/logo.png",
+        "128": "icons/logo.png"
+    }
+}
