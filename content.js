@@ -1,14 +1,14 @@
 /**
- * WannaNews Auto-Clicker - Chrome Extension
+ * WannaClick Pro - Chrome Extension
  * Universal auto-clicker that works on any website
  */
 
 (function () {
     'use strict';
 
-    console.log('[WannaClick] ========================================');
-    console.log('[WannaClick] Extension loaded! URL:', window.location.href);
-    console.log('[WannaClick] ========================================');
+    console.log('[WannaClick Pro] ========================================');
+    console.log('[WannaClick Pro] Extension loaded! URL:', window.location.href);
+    console.log('[WannaClick Pro] ========================================');
 
     const MAX_WAIT_TIME = 20000;
     const CHECK_INTERVAL = 500;
@@ -44,49 +44,95 @@
             targetText = result.targetText || 'News'; // Default to "News"
             delayMin = result.delayMin !== undefined ? result.delayMin : 1;
             delayMax = result.delayMax !== undefined ? result.delayMax : 3;
-            console.log('[WannaClick] Enabled state:', isEnabled);
-            console.log('[WannaClick] Target text:', targetText);
-            console.log('[WannaClick] Delay range:', delayMin, 'to', delayMax, 'seconds');
+            console.log('[WannaClick Pro] Enabled state:', isEnabled);
+            console.log('[WannaClick Pro] Target text:', targetText);
+            console.log('[WannaClick Pro] Delay range:', delayMin, 'to', delayMax, 'seconds');
             if (callback) callback();
         });
     }
 
     /**
-     * Listen for toggle and target changes from popup
+     * Helper function to apply the current enabled state to the UI
      */
-    chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
-        if (request.action === 'toggleChanged') {
-            isEnabled = request.enabled;
-            console.log('[WannaClick] Toggle changed:', isEnabled);
-
-            if (isEnabled) {
-                updateStatusIndicator(STATUS.IDLE);
-                // Try to click if on organization page
-                setTimeout(startAutoClick, 500);
-            } else {
-                updateStatusIndicator(STATUS.DISABLED);
-                // Stop any active polling
-                if (intervalId) {
-                    clearInterval(intervalId);
-                    intervalId = null;
-                }
-            }
-        } else if (request.action === 'targetChanged') {
-            targetText = request.target;
-            console.log('[WannaClick] Target changed:', targetText);
-
-            // Reset state to allow clicking new target
+    function applyEnabledState() {
+        createStatusIndicator(); // Ensure indicator exists
+        if (isEnabled) {
+            updateStatusIndicator(STATUS.IDLE);
+            // Reset and start fresh
             newsTabClicked = false;
             lastProcessedUrl = '';
-
-            if (isEnabled) {
-                updateStatusIndicator(STATUS.IDLE);
-                setTimeout(startAutoClick, 500);
+            setTimeout(startAutoClick, 500);
+        } else {
+            updateStatusIndicator(STATUS.DISABLED);
+            // Stop any active polling
+            if (intervalId) {
+                clearInterval(intervalId);
+                intervalId = null;
             }
+        }
+    }
+
+    /**
+     * Listen for storage changes - this is the PRIMARY way state is synced
+     * Works across all tabs and contexts
+     */
+    chrome.storage.onChanged.addListener(function (changes, areaName) {
+        if (areaName !== 'local') return;
+
+        console.log('[WannaClick Pro] Storage changed:', changes);
+
+        let needsStateUpdate = false;
+
+        if (changes.enabled !== undefined) {
+            const newEnabled = changes.enabled.newValue !== false;
+            console.log('[WannaClick Pro] Enabled changed:', isEnabled, '->', newEnabled);
+            isEnabled = newEnabled;
+            needsStateUpdate = true;
+        }
+
+        if (changes.targetText !== undefined) {
+            const newTarget = changes.targetText.newValue || 'News';
+            console.log('[WannaClick Pro] Target changed:', targetText, '->', newTarget);
+            targetText = newTarget;
+            newsTabClicked = false;
+            lastProcessedUrl = '';
+            needsStateUpdate = true;
+        }
+
+        if (changes.delayMin !== undefined) {
+            delayMin = changes.delayMin.newValue !== undefined ? changes.delayMin.newValue : 1;
+            console.log('[WannaClick Pro] DelayMin synced:', delayMin);
+        }
+
+        if (changes.delayMax !== undefined) {
+            delayMax = changes.delayMax.newValue !== undefined ? changes.delayMax.newValue : 3;
+            console.log('[WannaClick Pro] DelayMax synced:', delayMax);
+        }
+
+        if (needsStateUpdate) {
+            applyEnabledState();
+        }
+    });
+
+    /**
+     * Listen for direct messages from popup (backup for active tab)
+     */
+    chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+        console.log('[WannaClick Pro] Message received:', request.action);
+
+        if (request.action === 'toggleChanged') {
+            // Storage change listener will handle this, but update immediately for responsiveness
+            isEnabled = request.enabled;
+            applyEnabledState();
+        } else if (request.action === 'targetChanged') {
+            targetText = request.target;
+            newsTabClicked = false;
+            lastProcessedUrl = '';
+            applyEnabledState();
         } else if (request.action === 'delayChanged') {
             delayMin = request.delayMin;
             delayMax = request.delayMax;
-            console.log('[WannaClick] Delay changed:', delayMin, 'to', delayMax, 'seconds');
+            console.log('[WannaClick Pro] Delay changed:', delayMin, 'to', delayMax, 'seconds');
         }
     });
 
@@ -121,9 +167,9 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
         `;
         statusIndicator.innerHTML = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.8);"></span> Ready';
-        statusIndicator.title = 'WannaNews Auto-Clicker';
+        statusIndicator.title = 'WannaClick Pro';
         document.body.appendChild(statusIndicator);
-        console.log('[WannaClick] Visual indicator created');
+        console.log('[WannaClick Pro] Visual indicator created');
     }
 
     /**
@@ -152,7 +198,7 @@
      * Find the target tab element
      */
     function findTargetElement() {
-        console.log('[WannaClick] Searching for "' + targetText + '" element...');
+        console.log('[WannaClick Pro] Searching for "' + targetText + '" element...');
 
         // Helper: Check if element or its children contain exact text
         function hasExactText(el) {
@@ -192,7 +238,7 @@
         const textElements = document.querySelectorAll('span, div, p, label');
         for (let el of textElements) {
             if (el.textContent.trim() === targetText && el.children.length === 0) {
-                console.log('[WannaClick] ✓ Found "' + targetText + '" in text element');
+                console.log('[WannaClick Pro] ✓ Found "' + targetText + '" in text element');
                 const clickable = findClickableParent(el);
                 return clickable || el;
             }
@@ -202,7 +248,7 @@
         const roleElements = document.querySelectorAll('[role="tab"], [role="menuitem"]');
         for (let el of roleElements) {
             if (hasExactText(el)) {
-                console.log('[WannaClick] ✓ Found "' + targetText + '" via role attribute');
+                console.log('[WannaClick Pro] ✓ Found "' + targetText + '" via role attribute');
                 return el;
             }
         }
@@ -211,7 +257,7 @@
         const clickables = document.querySelectorAll('button, a, [role="button"], [role="menuitem"], li');
         for (let el of clickables) {
             if (hasExactText(el)) {
-                console.log('[WannaClick] ✓ Found "' + targetText + '" in clickable element');
+                console.log('[WannaClick Pro] ✓ Found "' + targetText + '" in clickable element');
                 return el;
             }
         }
@@ -219,7 +265,7 @@
         // Strategy 4: Fallback - any role element containing text (loose match)
         for (let el of roleElements) {
             if (el.textContent.includes(targetText)) {
-                console.log('[WannaClick] ✓ Found "' + targetText + '" via role (includes)');
+                console.log('[WannaClick Pro] ✓ Found "' + targetText + '" via role (includes)');
                 return el;
             }
         }
@@ -240,7 +286,7 @@
      * Click the News tab
      */
     function clickElement(element) {
-        console.log('[WannaClick] Clicking element...');
+        console.log('[WannaClick Pro] Clicking element...');
 
         element.scrollIntoView({ behavior: 'instant', block: 'center' });
 
@@ -286,29 +332,29 @@
         updateStatusIndicator(STATUS.SEARCHING);
 
         if (elapsed % 2000 === 0) {
-            console.log('[WannaClick] Still polling... (' + (elapsed / 1000) + 's)');
+            console.log('[WannaClick Pro] Still polling... (' + (elapsed / 1000) + 's)');
         }
 
         const targetElement = findTargetElement();
 
         if (targetElement) {
-            console.log('[WannaClick] ✓✓✓ "' + targetText + '" TAB FOUND after', (elapsed / 1000) + 's', '✓✓✓');
+            console.log('[WannaClick Pro] ✓✓✓ "' + targetText + '" TAB FOUND after', (elapsed / 1000) + 's', '✓✓✓');
 
             if (intervalId) clearInterval(intervalId);
             intervalId = null;
 
             const randomDelay = getRandomDelay();
-            console.log('[WannaClick] Waiting', (randomDelay / 1000) + 's', 'before clicking...');
+            console.log('[WannaClick Pro] Waiting', (randomDelay / 1000) + 's', 'before clicking...');
 
             setTimeout(() => {
                 clickElement(targetElement);
                 newsTabClicked = true;
                 updateStatusIndicator(STATUS.CLICKED);
-                console.log('[WannaClick] ✓ Click executed on "' + targetText + '" after', (randomDelay / 1000) + 's', 'delay!');
+                console.log('[WannaClick Pro] ✓ Click executed on "' + targetText + '" after', (randomDelay / 1000) + 's', 'delay!');
             }, randomDelay);
 
         } else if (elapsed >= MAX_WAIT_TIME) {
-            console.warn('[WannaClick] ✗ TIMEOUT searching for "' + targetText + '" after', (MAX_WAIT_TIME / 1000) + 's');
+            console.warn('[WannaClick Pro] ✗ TIMEOUT searching for "' + targetText + '" after', (MAX_WAIT_TIME / 1000) + 's');
             updateStatusIndicator(STATUS.TIMEOUT);
             if (intervalId) clearInterval(intervalId);
             intervalId = null;
@@ -320,7 +366,7 @@
      */
     function startAutoClick() {
         if (!isEnabled) {
-            console.log('[WannaClick] Disabled, skipping');
+            console.log('[WannaClick Pro] Disabled, skipping');
             return;
         }
 
@@ -328,11 +374,11 @@
 
         // Check if this page was already processed
         if (currentUrl === lastProcessedUrl && newsTabClicked) {
-            console.log('[WannaClick] Same page already processed, skipping');
+            console.log('[WannaClick Pro] Same page already processed, skipping');
             return;
         }
 
-        console.log('[WannaClick] ▶ Starting auto-click for:', currentUrl);
+        console.log('[WannaClick Pro] ▶ Starting auto-click for:', currentUrl);
 
         createStatusIndicator();
         updateStatusIndicator(STATUS.SEARCHING);
@@ -357,7 +403,7 @@
     function checkForUrlChange() {
         const currentUrl = window.location.href;
         if (currentUrl !== lastCheckedUrl) {
-            console.log('[WannaClick] URL changed:', lastCheckedUrl, '->', currentUrl);
+            console.log('[WannaClick Pro] URL changed:', lastCheckedUrl, '->', currentUrl);
             lastCheckedUrl = currentUrl;
 
             // Reset state for new page
@@ -370,19 +416,16 @@
 
     // ===== INITIALIZATION =====
 
-    // Load initial settings
+    // Load initial settings and apply state
     loadSettings(function () {
-        // Create indicator early
-        createStatusIndicator();
-
-        if (!isEnabled) {
-            updateStatusIndicator(STATUS.DISABLED);
-        }
+        console.log('[WannaClick Pro] Initial settings loaded, applying state...');
+        applyEnabledState();
     });
 
     // Listen for hash changes (SPA navigation)
     window.addEventListener('hashchange', function () {
-        console.log('[WannaClick] Hash changed!');
+        if (!isEnabled) return;
+        console.log('[WannaClick Pro] Hash changed!');
         newsTabClicked = false;
         lastProcessedUrl = '';
         setTimeout(startAutoClick, 500);
@@ -390,7 +433,8 @@
 
     // Listen for popstate (back/forward navigation)
     window.addEventListener('popstate', function () {
-        console.log('[WannaClick] Popstate event!');
+        if (!isEnabled) return;
+        console.log('[WannaClick Pro] Popstate event!');
         newsTabClicked = false;
         lastProcessedUrl = '';
         setTimeout(startAutoClick, 500);
@@ -398,8 +442,8 @@
 
     // Listen for visibility changes (when user switches tabs and comes back)
     document.addEventListener('visibilitychange', function () {
-        if (document.visibilityState === 'visible') {
-            console.log('[WannaClick] Tab became visible!');
+        if (document.visibilityState === 'visible' && isEnabled) {
+            console.log('[WannaClick Pro] Tab became visible!');
             // Reset and try again when tab becomes visible
             newsTabClicked = false;
             lastProcessedUrl = '';
@@ -410,8 +454,5 @@
     // Poll for URL changes (catches SPA navigation that doesn't trigger hashchange)
     setInterval(checkForUrlChange, 1000);
 
-    // Initial run
-    setTimeout(startAutoClick, 1000);
-
-    console.log('[WannaClick] ✓ Extension setup complete!');
+    console.log('[WannaClick Pro] ✓ Extension setup complete!');
 })();
