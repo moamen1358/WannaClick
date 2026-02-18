@@ -18,22 +18,10 @@
     let checkCount = 0;
     let newsTabClicked = false;
     let lastProcessedUrl = '';
-    let statusIndicator = null;
     let isEnabled = true;
     let targetText = 'News';
     let delayMin = 1; // seconds
     let delayMax = 3; // seconds
-
-    /**
-     * Visual status indicator states
-     */
-    const STATUS = {
-        IDLE: { bg: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', dot: 'rgba(255,255,255,0.8)', label: 'Ready' },
-        SEARCHING: { bg: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', dot: '#fff', label: 'Searching...' },
-        CLICKED: { bg: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', dot: '#fff', label: 'Done!' },
-        TIMEOUT: { bg: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)', dot: '#fff', label: 'Timeout' },
-        DISABLED: { bg: 'linear-gradient(135deg, #4b5563 0%, #374151 100%)', dot: 'rgba(255,255,255,0.5)', label: 'Disabled' }
-    };
 
     /**
      * Load enabled state, target, and delay from storage
@@ -55,15 +43,12 @@
      * Helper function to apply the current enabled state to the UI
      */
     function applyEnabledState() {
-        createStatusIndicator(); // Ensure indicator exists
         if (isEnabled) {
-            updateStatusIndicator(STATUS.IDLE);
             // Reset and start fresh
             newsTabClicked = false;
             lastProcessedUrl = '';
             setTimeout(startAutoClick, 500);
         } else {
-            updateStatusIndicator(STATUS.DISABLED);
             // Stop any active polling
             if (intervalId) {
                 clearInterval(intervalId);
@@ -135,64 +120,6 @@
             console.log('[WannaClick Pro] Delay changed:', delayMin, 'to', delayMax, 'seconds');
         }
     });
-
-    /**
-     * Create and inject a visual status indicator into the page
-     */
-    function createStatusIndicator() {
-        if (statusIndicator) return;
-
-        statusIndicator = document.createElement('div');
-        statusIndicator.id = 'wannanews-indicator';
-        statusIndicator.style.cssText = `
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            z-index: 999999;
-            padding: 10px 16px;
-            border-radius: 10px;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            font-size: 12px;
-            font-weight: 600;
-            color: white;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4), 0 2px 6px rgba(0,0,0,0.2);
-            cursor: default;
-            user-select: none;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        `;
-        statusIndicator.innerHTML = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.8);"></span> Ready';
-        statusIndicator.title = 'WannaClick Pro';
-        document.body.appendChild(statusIndicator);
-        console.log('[WannaClick Pro] Visual indicator created');
-    }
-
-    /**
-     * Update the visual status indicator
-     */
-    function updateStatusIndicator(status) {
-        if (!statusIndicator) return;
-        statusIndicator.style.background = status.bg;
-        statusIndicator.innerHTML = `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${status.dot};${status === STATUS.SEARCHING ? 'animation:wnPulse 1s ease-in-out infinite;' : ''}"></span> ${status.label}`;
-
-        // Inject animation keyframes if not already present
-        if (!document.getElementById('wn-animations')) {
-            const style = document.createElement('style');
-            style.id = 'wn-animations';
-            style.textContent = `
-                @keyframes wnPulse {
-                    0%, 100% { opacity: 1; transform: scale(1); }
-                    50% { opacity: 0.5; transform: scale(0.8); }
-                }
-            `;
-            document.head.appendChild(style);
-        }
-    }
 
     /**
      * Find the target tab element
@@ -329,8 +256,6 @@
         checkCount++;
         const elapsed = checkCount * CHECK_INTERVAL;
 
-        updateStatusIndicator(STATUS.SEARCHING);
-
         if (elapsed % 2000 === 0) {
             console.log('[WannaClick Pro] Still polling... (' + (elapsed / 1000) + 's)');
         }
@@ -349,13 +274,11 @@
             setTimeout(() => {
                 clickElement(targetElement);
                 newsTabClicked = true;
-                updateStatusIndicator(STATUS.CLICKED);
                 console.log('[WannaClick Pro] ✓ Click executed on "' + targetText + '" after', (randomDelay / 1000) + 's', 'delay!');
             }, randomDelay);
 
         } else if (elapsed >= MAX_WAIT_TIME) {
             console.warn('[WannaClick Pro] ✗ TIMEOUT searching for "' + targetText + '" after', (MAX_WAIT_TIME / 1000) + 's');
-            updateStatusIndicator(STATUS.TIMEOUT);
             if (intervalId) clearInterval(intervalId);
             intervalId = null;
         }
@@ -379,9 +302,6 @@
         }
 
         console.log('[WannaClick Pro] ▶ Starting auto-click for:', currentUrl);
-
-        createStatusIndicator();
-        updateStatusIndicator(STATUS.SEARCHING);
 
         lastProcessedUrl = currentUrl;
         newsTabClicked = false;
