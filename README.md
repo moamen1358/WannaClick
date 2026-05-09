@@ -1,5 +1,7 @@
 # WannaClick
 
+[![Manifest V3](https://img.shields.io/badge/Manifest-V3-4285F4?logo=googlechrome&logoColor=white)](https://developer.chrome.com/docs/extensions/mv3/intro/) [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 WannaClick is a Chromium browser extension that automatically clicks any
 element matching a user-specified text label on any website. It supports
 configurable random delays to mimic human behavior, single-page-app
