@@ -1,6 +1,9 @@
-# WannaClick Pro
+# WannaClick
 
-A browser extension that automatically clicks any element you specify on any website.
+WannaClick is a browser extension that automatically clicks any element
+matching a user-specified text label on any website. It supports
+configurable random delays, single-page-app navigation, and a visible
+on-page status indicator.
 
 ## Features
 
